@@ -1,0 +1,105 @@
+from random import uniform as func
+import pygame
+
+pygame.init()
+WIDTH, HEIGHT = 400, 600
+win = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Bounce Game")
+clock = pygame.time.Clock()
+
+# Основні параметри
+bound = 5  # товщина границь
+c2s = 30  # кадрів за секунду
+white = (255, 255, 255)
+black = (0, 0, 0)
+
+# Параметри м'яча
+x, y = WIDTH // 2, HEIGHT // 2  # початкове положення – центр вікна
+radius = 10
+color = (0, 255, 0)  # зелений колір
+
+# Початкова швидкість м'яча (випадковий напрямок)
+velocity = 8
+vx = velocity * func(-1, 1)
+vy = velocity * func(-1, 1)
+
+# Ефективні межі для центра м'яча
+border_l = bound + radius
+border_u = bound + radius
+border_r = WIDTH - bound - radius
+
+# Параметри майданчика (платформи)
+height = 10
+width = 80
+xp = (WIDTH - width) // 2  # розташування платформи по горизонталі (центр)
+yp = HEIGHT - height  # платформа прикріплена до нижньої частини вікна
+vp = 10  # швидкість руху платформи
+
+# Лічильник очок гравця
+score = 0
+
+def drawWindow():
+    win.fill(black)
+    pygame.draw.rect(win, white, (0, 0, WIDTH, bound))  # верхня межа
+    pygame.draw.rect(win, white, (0, 0, bound, HEIGHT))  # ліва межа
+    pygame.draw.rect(win, white, (WIDTH - bound, 0, bound, HEIGHT))  # права межа
+
+    pygame.draw.rect(win, white, (xp, yp, width, height))
+    pygame.draw.circle(win, color, (int(x), int(y)), radius)
+    pygame.display.update()
+
+
+def drawScore(final_score):
+    font = pygame.font.SysFont('comicsans', 40)
+    text = font.render("Your score: " + str(final_score), 1, white)
+    win.fill(black)
+    # Розміщуємо текст по центру вікна
+    win.blit(text, ((WIDTH - text.get_width()) // 2,
+                    (HEIGHT - text.get_height()) // 2))
+    pygame.display.update()
+
+
+run = True
+while run:
+    clock.tick(c2s)
+
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_LEFT] and xp > bound:
+        xp -= vp
+    if keys[pygame.K_RIGHT] and xp < WIDTH - width - bound:
+        xp += vp
+
+    # Оновлення положення м'яча
+    x += vx
+    y += vy
+
+    # Відбиття від лівої та правої меж
+    if x + vx < border_l or x + vx > border_r:
+        vx = -vx
+
+    # Відбиття від верхньої межі
+    if y + vy < border_u:
+        vy = -vy
+
+    # Перевірка: якщо м'яч наближається до платформи (нижня частина)
+    if y + vy >= yp:
+        if xp <= x + vx <= xp + width:
+            # Влучання в платформу: відбиваємо м'яч і збільшуємо швидкість
+            vy = -vy
+            vx *= 1.5
+            vy *= 1.5
+            score += 1  # збільшуємо рахунок
+        else:
+            # Програш: м'яч не відбився від платформи – гра завершується
+            run = False
+
+    drawWindow()
+
+# Гра завершилася — відображаємо рахунок гравця
+drawScore(score)
+pygame.time.delay(3000)
+pygame.quit()
